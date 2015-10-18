@@ -1,0 +1,28 @@
+#!/bin/sh
+
+#
+# A simple bash script that uses curl to create a pfSense webGUI session and 
+# then uses that session to shut pfSense down. Ideal for use with pwrstatd
+# running on another server.
+#
+
+
+
+# Change these!!
+firewallUrl="https://myPfSenseBox.domain.tld"
+usr="upsShutdown"
+pwd="somePassword"
+
+#Get csrfToken 
+csrfToken=$(curl -k -b $cookieJar -c $cookieJar $firewallUrl | grep "name='__csrf_magic'" | awk -F"\"" '{print $12}')
+
+#Login
+curl -k -b ~/cookieJar -c ~/cookieJar --data "login=Login&usernamefld=$usr&passwordfld=$pwd&__csrf_magic=$csrfToken" $firewallUrl/index.php 2&1>/dev/null
+
+#Get fresh csrfToken
+csrfToken=$(curl -k -b ~/cookieJar -c ~/cookieJar $firewallUrl/halt.php | grep "name='__csrf_magic'" | awk -F"\"" '{print $6}')
+
+#Halt pfSense
+curl -k -b ~/cookieJar -c ~/cookieJar --data "Submit= Yes &__csrf_magic=$csrfToken" $firewallUrl/halt.php 2&1>/dev/null
+
+rm -rf ~/cookieJar
