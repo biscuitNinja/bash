@@ -13,8 +13,6 @@ firewallUrl="https://myPfSenseBox.domain.tld"
 usr="upsShutdown"
 pwd="somePassword"
 
-#!/bin/sh
-
 #Get csrfToken 
 csrfToken=$(curl -s -k -b ~/cookieJar -c ~/cookieJar $firewallUrl | grep "name='__csrf_magic'" | egrep -o  "value=\".*\"" | awk -F"\"" '{print $2}')
 
