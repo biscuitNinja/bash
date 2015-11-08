@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# The server/folder to backup
+remoteHost=someserver.somedomain.sometld
+sourceFolder=/var/backups/dpkg
+
+# Identity file for SSH connection
+sshIdentifyFile=/root/.ssh/id_rsa_dpkg-selections-rsync-backup_someserver.somedomain.sometld
+
+# The location where backups are maintained
+backupFolder=/zfs/biz/it/backups/someserver/dpkg
+
+# The path to the prior backup (--link-dest)
+priorBackup=${backupFolder}/$(ls -1 $backupFolder | tail -1)
+
+# The path for our new backup
+newBackup=${backupFolder}/$(date -I)
+
+#  Calculate the age of the oldest backup to maintain
+oldestToKeep=$(date --date="31 days ago" +"%Y%m%d")
+
+rsync -azq -e "ssh -q -i ${sshIdentifyFile}" --delete --link-dest=${priorBackup} backup@${remoteHost}:${sourceFolder} $newBackup
+
+if [ $? -eq 0 ]; then
+	for folder in $(ls $backupFolder) ; do 
+		if [ $(date --date="$folder" +"%Y%m%d") -lt $oldestToKeep ] ; then
+		  rm -rf $backupFolder/$folder
+	  fi
+  done
+fi
