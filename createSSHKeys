@@ -1,0 +1,28 @@
+#!/bin/bash
+
+keyPath=~/keys_for_brox
+keyDesc=(   var-log-archive-rsync-backup \
+            dba-mysql-rsync-backup \
+            www-rsync-backup \
+            etc-rsync-backup \
+            vmail-rsync-backup \
+            dpkg-selections-rsync-backup \
+        )
+command=(   "rsync --server --sender -ltrze.iLs . /var/log/archive/*" \
+            "rsync --server --sender -ltrze.iLs . /var/backups/mysql/*" \
+            "rsync --server --sender -vltrze.iLs . /var/backups/www/" \
+            "rsync --server --sender -vltrze.iLs . /var/backups/etc/" \
+            "rsync --server --sender -vltrze.iLs . /var/backups/vmail/" \
+            "rsync --server --sender -vltrze.iLs . /var/backups/dpkg/" \
+        )
+
+rm -f ${keyPath}/*
+
+for ((i=0;i<${#keyDesc[*]};i++)) ; do
+    ssh-keygen -q -t rsa -b 3072 \
+        -f ${keyPath}/id_rsa_${keyDesc[$i]}_bourbon.biscuit.ninja \
+        -N "" \
+        -C ${keyDesc[$i]}
+    
+    sed -i "1s|^|command=\"${command[$i]}\,no-agent-forwarding,no-port-forwarding,no-x11-forwarding,no-user-rc |" ${keyPath}/id_rsa_${keyDesc[$i]}_bourbon.biscuit.ninja.pub
+done
