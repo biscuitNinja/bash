@@ -28,9 +28,9 @@ newSnapshot=$(/sbin/zfs list -t snapshot -o name -s name | grep ^${storagePool}@
 /sbin/zfs send -R -i ${lastSnapshot} ${newSnapshot} | pigz -4 | trickle -u 10240 ssh -q -i ${identifyFile} ${remoteUser}@${remoteDestination} "unpigz | sudo /sbin/zfs receive -Fduv ${storagePool}" &>/dev/null || exit 130
 
 oldestSnapshotToKeep=$(date --date="31 days ago" +"%Y%m%d%H%M%S")
-for snapshot in $(zfs list -t snapshot -o name -s name | grep ${storagePool}) ; do
+for snapshot in $(zfs list -t snapshot -o name -s name | grep ^${storagePool}@) ; do
         snapshotDate=$(echo $snapshot | grep -P -o '2\d{3}-[0-3]\d-[0-3]\dT[012]\d:[0-5]\d:[0-5]\d')
         if [ $(date --date="$snapshotDate" +"%Y%m%d%H%M%S") -lt $oldestSnapshotToKeep ] ; then
-                /sbin/zfs destroy ${snapshot} &>/dev/null || exit 140
+                /sbin/zfs destroy -R ${snapshot} &>/dev/null || exit 140
         fi
 done
