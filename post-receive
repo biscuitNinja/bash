@@ -6,8 +6,7 @@
 # for port 22 to become available. Wait up to another minute for the Jenkins Dashboard to be returned
 # (over HTTPs) and then trigger a build with git commit message as cause.
 #
-#
-#!/bin/bash
+
 read oldrev newrev refname
 
 buildServer="jenkins.bikeshed.internal"
