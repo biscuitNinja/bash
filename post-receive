@@ -45,5 +45,5 @@ fi
 
 echo "!! #>>>> INFO: Build server is running. Jenkins dashboard available. <<<<# !!"
 
-cause=$(echo $(git log $oldrev..$newrev --pretty="format:%ci %cn %h %s"  | xxd -plain | tr -d '\n' | sed 's/\(..\)/%\1/g'))
+cause=$(echo $(git log $oldrev..$newrev --pretty="format:%ci %cn %h %s"  | /usr/bin/xxd -plain | /usr/bin/tr -d '\n' | sed 's/\(..\)/%\1/g'))
 /usr/bin/curl -s -k "https://${buildServer}/job/${project}/build?token=${token}&cause=${cause}"
