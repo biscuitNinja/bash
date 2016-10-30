@@ -1,0 +1,45 @@
+#!/bin/bash
+#
+# Git post-receive hook
+#
+# Check whether build server is alive. If not, issue Wake-on-Lan packet and wait up to 60 seconds
+# for port 22 to become available. Wait up to another minute for the Jenkins Dashboard to be returned
+# (over HTTPs) and then trigger a build.
+#
+#
+read oldrev newrev refname
+
+buildServer=jenkins.bikeshed.internal
+projectName="biscuit.ninja%20website"
+token="myJenkinsToken"
+
+nc -z $buildServer 22 && buildServerOnline=true
+[ $buildServerOnline ] || echo "!! #>>>> INFO: Build server off-line. Issuing WoL packet <<<<# !!"
+
+for ((i=1;i<=10;i++)) ; do
+    [ $buildServerOnline ] && break
+    /usr/bin/wakeonlan c0:3f:d5:64:b7:b7 &> /dev/null
+    sleep 6
+    nc -z $buildServer 22 && buildServerOnline=true
+done
+
+if ! [ $buildServerOnline ] ; then
+    echo "!! #>>>> INFO: Build server unavailable. <<<<# !!"
+    exit
+fi
+
+for ((i=1;i<=10;i++)) ; do
+    /usr/bin/curl -ks https://$buildServer | grep 'Dashboard \[Jenkins\]' &>/dev/null && jenkinsDashboardAvailable=true
+    [ $jenkinsDashboardAvailable ] && break
+    sleep 6
+done
+
+if ! [ $jenkinsDashboardAvailable ] ; then
+    echo "!! #>>>> INFO: Jenkins dashboard unresponsive. <<<<# !!"
+    exit
+fi
+
+echo "!! #>>>> INFO: Build server is running. Jenkins dashboard available. <<<<# !!"
+
+cause=$(echo $(git log $oldrev..$newrev --pretty="format:%ci %cn %h %s"  | xxd -plain | tr -d '\n' | sed 's/\(..\)/%\1/g'))
+/usr/bin/curl -s -k "https://jenkins.bikeshed.internal/job/$projectName/build?token=${token}&cause=${cause}"
