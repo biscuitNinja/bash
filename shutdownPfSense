@@ -20,9 +20,9 @@ csrfToken=$(curl -s -k -b ~/cookieJar -c ~/cookieJar $firewallUrl | grep "name='
 curl -s -k -b ~/cookieJar -c ~/cookieJar --data "login=Login&usernamefld=${usr}&passwordfld=${pwd}&__csrf_magic=$csrfToken" $firewallUrl/index.php
 
 #Get fresh csrfToken
-csrfToken=$(curl -s -k -b ~/cookieJar -c ~/cookieJar $firewallUrl/halt.php | grep "name='__csrf_magic'" | egrep -o  "value=\".*\"" | awk -F"\"" '{print $2}')
+csrfToken=$(curl -s -k -b ~/cookieJar -c ~/cookieJar $firewallUrl/diag_halt.php | grep "name='__csrf_magic'" | egrep -o  "value=\".*\"" | awk -F"\"" '{print $2}')
 
 #Halt pfSense
-curl -s -k -b ~/cookieJar -c ~/cookieJar --data "Submit= Yes &__csrf_magic=$csrfToken" $firewallUrl/halt.php
+curl -s -k -b ~/cookieJar -c ~/cookieJar --data "Submit= Yes &__csrf_magic=$csrfToken" $firewallUrl/diag_halt.php
 
 rm -rf ~/cookieJar
