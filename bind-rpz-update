@@ -1,0 +1,19 @@
+#!/bin/bash
+set -eu
+((newSerial=$(grep -Po '\d+\s+\;\s+serial$' /var/lib/bind/db.rpz.bikeshed.internal | /usr/bin/awk '{ print $1 }')+1))
+
+cat << 'EOF'| /bin/sed "s/liareSwen/$newSerial/" > /var/lib/bind/db.rpz.bikeshed.internal
+$TTL 3600	; 1 hour
+@                       IN SOA	brox.bikeshed.internal.	root.bikeshed.internal. (
+				liareSwen		; serial
+				43200		; refresh (12 hours)
+                                86400		; retry (1 day)
+                                2419200		; expire (4 weeks)
+                                10800		; minimum (3 hours)
+                                )
+			NS	brox.bikeshed.internal.
+EOF
+
+/usr/bin/wget -q -O - http://someonewhocares.org/hosts/zero/hosts | grep '^0.0.0.0' | awk '!a[$0]++' | awk '{print $2 "\tCNAME\tbrox.bikeshed.internal."}' >> /var/lib/bind/db.rpz.bikeshed.internal
+
+/usr/sbin/rndc reload rpz.bikeshed.internal >/dev/null
